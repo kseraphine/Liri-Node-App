@@ -1,4 +1,5 @@
 var request = require('request');
+var fs = require('fs');
 var inquirer = require('inquirer');
 var Twitter = require('twitter');
 var spotify = require('spotify');
@@ -10,7 +11,7 @@ var client = new Twitter({
   access_token_key: myKeys.access_token_key,
   access_token_secret: myKeys.access_token_secret,
 });
-var params = {screen_name: 'kseraphine'};
+var params = {screen_name: 'kseraphine', count: 20};
 var song = '';
 var movie = '';
 
@@ -18,41 +19,67 @@ var movie = '';
 var myTweets = function() {
   client.get('statuses/user_timeline', params, function(error, tweets, response) {
     if (!error) {
-      console.log(tweets);
-      console.log(response);
+      console.log('\nMy Tweets:\n');
+      for (var i = 0; i < tweets.length; i++) {
+      console.log('On,', tweets[i].created_at, tweets[i].user.name, 'said: ');
+      console.log(tweets[i].text, '\n');
+      }
     }else {
       console.log(error);
     }
 
-    // Do something with tweets.
+    liriGo();
   });
 };
 
 //spotify-this-song
 var spotifySearch = function() {
-  spotify.search({ type: 'track', query: 'dancing in the moonlight' }, function(err, data) {
-      if( err ) {
-          console.log('Error occurred: ' + err);
-          return;
+  spotify.search({ type: 'track', query: song }, function(err, data) {
+      if(err) {
+        console.log('Error occurred: ' + err);
+        return;
       }else {
-        console.log(data);
+        console.log('\nSong Info:\n');
+        console.log('Album: ', data.tracks.items[0].album.name);
+        console.log('Artist: ', data.tracks.items[0].artists[0].name);
+        console.log('Song: ', data.tracks.items[0].name);
+        console.log('Preview: ', data.tracks.items[0].preview_url, '\n');
       }
 
-      // Do something with 'data'
+      liriGo();
   });
 };
 
 //movie-this
-var movieSearch = function() {
+var movieSearch = function(movie) {
   request('http://www.omdbapi.com/?t=' + movie, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      console.log(body);
+      var list = JSON.parse(body);
+
+      console.log('\nMovie Info:\n');
+      console.log('Title:', list.Title);
+      console.log('Year:', list.Year);
+      console.log('IMDB Rating:', list.imdbRating);
+      console.log('Country:', list.Country);
+      console.log('Language:', list.Language);
+      console.log('Plot:', list.Plot);
+      console.log('Actors:', list.Actors, '\n');
     }else if (error) {
-      console.log('Movie search error: ' + error)
+      console.log('Movie search error: ' + error);
     }
+
+    liriGo();
   });
 };
+
 //do-what-it-says
+var doIt = function() {
+  fs.readFile("random.txt", "utf8", function(error, data) {
+    var fix = data.split('"');
+    song = fix[1];
+    spotifySearch();
+  });
+};
 
 var firstPromt = {
   type: 'list',
@@ -63,24 +90,18 @@ var firstPromt = {
     'spotify-this-song',
     'movie-this',
     'do-what-it-says',
+    'EXIT',
   ],
 };
 
 var spotifyPrompt = {
   type: 'input',
   name: 'song',
-  message: 'What song do you want to search?',
+  message: 'What song and artist do you want to search?',
   default: function() {
-    return 'The Sign';
+    return 'Ace of Base The Sign';
   },
-};//, {
-//  type: 'input',
-//  name: 'artist',
-//  message: 'Who is the artist?',
-//  default: function() {
-//    return 'Ace of Base';
-//  }
-//}
+};
 
 var moviePrompt = {
   type: 'input',
@@ -101,43 +122,27 @@ var liriGo = function () {
       case 'spotify-this-song':
         inquirer.prompt(spotifyPrompt).then(function (answer1) {
           console.log('Searching song...');
-          song = answer1;
+          song = answer1.song;
           spotifySearch();
         });
         break;
       case 'movie-this':
         inquirer.prompt(moviePrompt).then(function (answer2) {
-          console.log('Searching movie...');
-          movie = answer2;
-          movieSearch();
+          console.log('Searching movie...', answer2.movie);
+          movie = answer2.movie;
+          movieSearch(movie);
         });
         break;
       case 'do-what-it-says':
-        console.log('Sorry, I have no idea how to do that.');
+        console.log('Ok, I\'ll try...');
+        doIt();
+        break;
+      case 'EXIT':
+        console.log('Goodbye!');
         break;
       default:
         console.log('Something went wrong...');
     }
-    /*if(answers.firstPromt == 'my-tweets') {
-      console.log('Getting tweets...');
-      myTweets();
-    }else if (answers.firstPromt == 'spotify-this-song') {
-      inquirer.prompt(spotifyPrompt).then(function (answer1) {
-        console.log('Searching song...');
-        song = answer1;
-        spotifySearch();
-      });
-    }else if (answers.firstPromt == 'movie-this') {
-      inquirer.prompt(moviePrompt).then(function (answer2) {
-        console.log('Searching movie...');
-        movie = answer2;
-        movieSearch();
-      });
-    }else if (answers.firstPromt == 'do-what-it-says') {
-      console.log('Sorry, I have no idea how to do that.');
-    }else {
-      console.log('Sorry I didn\'t catch your answer.');
-    }*/
   });
 };
 
