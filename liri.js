@@ -64,9 +64,6 @@ var firstPromt = {
     'movie-this',
     'do-what-it-says',
   ],
-  default: function() {
-    return 'do-what-it-says';
-  },
 };
 
 var spotifyPrompt = {
@@ -96,7 +93,7 @@ var moviePrompt = {
 
 var liriGo = function () {
   inquirer.prompt(firstPromt).then(function (answers) {
-    switch (answers.firstPromt) {
+    switch (answers.name) {
       case 'my-tweets':
         console.log('Getting tweets...');
         myTweets();
