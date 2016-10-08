@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/kseraphine/liri-node-app#readme",
   "dependencies": {
+    "fs": "0.0.1-security",
     "inquirer": "^1.2.1",
     "request": "^2.75.0",
     "spotify": "^0.3.0",
